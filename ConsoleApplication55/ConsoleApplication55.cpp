@@ -11,89 +11,12 @@ using namespace std;
 
 const int MAX_CONTACTS = 100;
 
-class Contact {
-private:
-    char* name;
+struct Contact {
+    char name[100];
     char homePhone[20];
     char workPhone[20];
     char mobilePhone[20];
     char extraInfo[100];
-
-public:
-    Contact() {
-        name = nullptr;
-        homePhone[0] = workPhone[0] = mobilePhone[0] = extraInfo[0] = '\0';
-    }
-
-    Contact(const char* n, const char* home, const char* work, const char* mobile, const char* extra) {
-        name = new char[strlen(n) + 1];
-        strcpy(name, n);
-        strcpy(homePhone, home);
-        strcpy(workPhone, work);
-        strcpy(mobilePhone, mobile);
-        strcpy(extraInfo, extra);
-    }
-
-    Contact(const Contact& c) {
-        name = new char[strlen(c.name) + 1];
-        strcpy(name, c.name);
-        strcpy(homePhone, c.homePhone);
-        strcpy(workPhone, c.workPhone);
-        strcpy(mobilePhone, c.mobilePhone);
-        strcpy(extraInfo, c.extraInfo);
-    }
-
-    Contact& operator=(const Contact& c) {
-        if (this != &c) {
-            delete[] name;
-            name = new char[strlen(c.name) + 1];
-            strcpy(name, c.name);
-            strcpy(homePhone, c.homePhone);
-            strcpy(workPhone, c.workPhone);
-            strcpy(mobilePhone, c.mobilePhone);
-            strcpy(extraInfo, c.extraInfo);
-        }
-        return *this;
-    }
-
-    ~Contact() {
-        delete[] name;
-    }
-
-    const char* getName() const {
-        return name;
-    }
-
-    void display() const {
-        cout << "Name: " << name << endl;
-        cout << "Home Phone: " << homePhone << endl;
-        cout << "Work Phone: " << workPhone << endl;
-        cout << "Mobile Phone: " << mobilePhone << endl;
-        cout << "Extra Info: " << extraInfo << endl;
-        cout << "--------------------------\n";
-    }
-
-    void saveToFile(FILE* file) const {
-        int len = strlen(name);
-        fwrite(&len, sizeof(len), 1, file);
-        fwrite(name, sizeof(char), len, file);
-        fwrite(homePhone, sizeof(homePhone), 1, file);
-        fwrite(workPhone, sizeof(workPhone), 1, file);
-        fwrite(mobilePhone, sizeof(mobilePhone), 1, file);
-        fwrite(extraInfo, sizeof(extraInfo), 1, file);
-    }
-
-    void loadFromFile(FILE* file) {
-        int len;
-        fread(&len, sizeof(len), 1, file);
-        name = new char[len + 1];
-        fread(name, sizeof(char), len, file);
-        name[len] = '\0';
-        fread(homePhone, sizeof(homePhone), 1, file);
-        fread(workPhone, sizeof(workPhone), 1, file);
-        fread(mobilePhone, sizeof(mobilePhone), 1, file);
-        fread(extraInfo, sizeof(extraInfo), 1, file);
-    }
 };
 
 Contact contacts[MAX_CONTACTS];
@@ -104,16 +27,13 @@ void addContact() {
         cout << "Phonebook is full.\n";
         return;
     }
-
-    char name[100], home[20], work[20], mobile[20], extra[100];
     cin.ignore();
-    cout << "Enter name: "; cin.getline(name, 100);
-    cout << "Home phone: "; cin.getline(home, 20);
-    cout << "Work phone: "; cin.getline(work, 20);
-    cout << "Mobile phone: "; cin.getline(mobile, 20);
-    cout << "Extra info: "; cin.getline(extra, 100);
-
-    contacts[contactCount++] = Contact(name, home, work, mobile, extra);
+    cout << "Enter name: "; cin.getline(contacts[contactCount].name, 100);
+    cout << "Home phone: "; cin.getline(contacts[contactCount].homePhone, 20);
+    cout << "Work phone: "; cin.getline(contacts[contactCount].workPhone, 20);
+    cout << "Mobile phone: "; cin.getline(contacts[contactCount].mobilePhone, 20);
+    cout << "Extra info: "; cin.getline(contacts[contactCount].extraInfo, 100);
+    contactCount++;
 }
 
 void showAll() {
@@ -122,7 +42,12 @@ void showAll() {
         return;
     }
     for (int i = 0; i < contactCount; ++i) {
-        contacts[i].display();
+        cout << "Name: " << contacts[i].name << endl;
+        cout << "Home Phone: " << contacts[i].homePhone << endl;
+        cout << "Work Phone: " << contacts[i].workPhone << endl;
+        cout << "Mobile Phone: " << contacts[i].mobilePhone << endl;
+        cout << "Extra Info: " << contacts[i].extraInfo << endl;
+        cout << "--------------------------\n";
     }
 }
 
@@ -132,8 +57,13 @@ void searchByName() {
     cout << "Enter name to search: "; cin.getline(query, 100);
     bool found = false;
     for (int i = 0; i < contactCount; ++i) {
-        if (strcmp(contacts[i].getName(), query) == 0) {
-            contacts[i].display();
+        if (strcmp(contacts[i].name, query) == 0) {
+            cout << "Name: " << contacts[i].name << endl;
+            cout << "Home Phone: " << contacts[i].homePhone << endl;
+            cout << "Work Phone: " << contacts[i].workPhone << endl;
+            cout << "Mobile Phone: " << contacts[i].mobilePhone << endl;
+            cout << "Extra Info: " << contacts[i].extraInfo << endl;
+            cout << "--------------------------\n";
             found = true;
         }
     }
@@ -146,10 +76,10 @@ void deleteByName() {
     cin.ignore();
     cout << "Enter name to delete: "; cin.getline(query, 100);
     for (int i = 0; i < contactCount; ++i) {
-        if (strcmp(contacts[i].getName(), query) == 0) {
+        if (strcmp(contacts[i].name, query) == 0) {
             for (int j = i; j < contactCount - 1; ++j)
                 contacts[j] = contacts[j + 1];
-            --contactCount;
+            contactCount--;
             cout << "Contact deleted.\n";
             return;
         }
@@ -160,29 +90,25 @@ void deleteByName() {
 void saveToFile(const char* filename) {
     FILE* file = fopen(filename, "wb");
     if (!file) {
-        cout << "Cannot open file for writing.\n";
+        cout << "Cannot open file.\n";
         return;
     }
     fwrite(&contactCount, sizeof(contactCount), 1, file);
-    for (int i = 0; i < contactCount; ++i) {
-        contacts[i].saveToFile(file);
-    }
+    fwrite(contacts, sizeof(Contact), contactCount, file);
     fclose(file);
-    cout << "Contacts saved to file.\n";
+    cout << "Contacts saved.\n";
 }
 
 void loadFromFile(const char* filename) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
-        cout << "Cannot open file for reading.\n";
+        cout << "Cannot open file.\n";
         return;
     }
     fread(&contactCount, sizeof(contactCount), 1, file);
-    for (int i = 0; i < contactCount; ++i) {
-        contacts[i].loadFromFile(file);
-    }
+    fread(contacts, sizeof(Contact), contactCount, file);
     fclose(file);
-    cout << "Contacts loaded from file.\n";
+    cout << "Contacts loaded.\n";
 }
 
 int main() {
